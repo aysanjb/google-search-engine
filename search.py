@@ -1,3 +1,4 @@
+from datetime import date
 import requests
 import mysql.connector
 
@@ -21,19 +22,23 @@ def google_search(query):
     return search_results
 
 def save_to_mysql(results_list, query):
+    connection = mysql.connector.connect(user='root', password='password', host="127.0.0.1", database="search_results_db")
+  
+
     try:
         # Connect to the MySQL database
-        connection = mysql.connector.connect(user= 'root',password='password',host="127.0.0.1",database="search_results_db")
         cursor = connection.cursor()
 
         # Insert each result into the database
         for result in results_list:
             title = result['title']
-            snippet = result['snippet']
             url = result['link']
+            # Using current date since 'date' field might not be available in the response
+            date_today = date.today()
+
             cursor.execute(
-                "INSERT INTO search_results (query, title, snippet, url) VALUES (%s, %s, %s, %s)",
-                (query, title, snippet, url)
+                "INSERT INTO search_results (query, title, link, date) VALUES (%s, %s, %s, %s)",
+                (query, title, url, date_today)
             )
         
         # Commit the transaction
@@ -44,19 +49,24 @@ def save_to_mysql(results_list, query):
     except mysql.connector.Error as err:
         print(f"Error: {err}")
     
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
 
-
-def generate_serp(search_results):
+def generate_serp(search_results, query):
     results_list = []
     for result in search_results.get('items', []):
         title = result['title']
-        snippet = result['snippet']
-        url = result['link']
-        results_list.append({"title": title, "snippet": snippet, "link": url})
+        link = result['link']
+        # 'date' is not a standard field in Google Custom Search results, so we are using the current date
+        date_today = date.today()
+
+        results_list.append({"query": query, "title": title, "link": link, "date": date_today})
     return results_list
 
 # Example Usage
-query = "Python programming"
+query = "مهاجرت به انگلیس"
 search_results = google_search(query)
-results_list = generate_serp(search_results)
+results_list = generate_serp(search_results, query)
 save_to_mysql(results_list, query)
