@@ -2,11 +2,9 @@ from datetime import date
 import requests
 import mysql.connector
 
-# Replace these with your actual API key, Custom Search Engine ID, and MySQL credentials
-api_key = 'AIzaSyAe-f0NF7Mz-KHtdva2skx7cxZdRoaSl0U'  # Your API key from Google Cloud
-search_engine_id = '55d861a5b151b48da'  # Your CSE ID from Google Custom Search Engine
+api_key = ' '  
+search_engine_id = ' '  
 
-# MySQL Database connection details
 
 
 def google_search(query):
@@ -17,7 +15,7 @@ def google_search(query):
         'cx': search_engine_id,
     }
     response = requests.get(search_url, params=params)
-    response.raise_for_status()  # Raise an error for bad status codes
+    response.raise_for_status()  
     search_results = response.json()
     return search_results
 
@@ -26,14 +24,11 @@ def save_to_mysql(results_list, query):
   
 
     try:
-        # Connect to the MySQL database
         cursor = connection.cursor()
 
-        # Insert each result into the database
         for result in results_list:
             title = result['title']
             url = result['link']
-            # Using current date since 'date' field might not be available in the response
             date_today = date.today()
 
             cursor.execute(
@@ -41,7 +36,6 @@ def save_to_mysql(results_list, query):
                 (query, title, url, date_today)
             )
         
-        # Commit the transaction
         connection.commit()
 
         print(f"Results for '{query}' saved to MySQL database.")
@@ -59,7 +53,6 @@ def generate_serp(search_results, query):
     for result in search_results.get('items', []):
         title = result['title']
         link = result['link']
-        # 'date' is not a standard field in Google Custom Search results, so we are using the current date
         date_today = date.today()
 
         results_list.append({"query": query, "title": title, "link": link, "date": date_today})
